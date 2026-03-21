@@ -1,0 +1,8 @@
+﻿
+D:\bengaluru-traffic-pulse\src\components\AIPredictionsPanel.tsx
+   80:7  error  'cleaned' is never reassigned. Use 'const' instead  prefer-const
+  231:9  error  'cleaned' is never reassigned. Use 'const' instead  prefer-const
+
+Γ£û 2 problems (2 errors, 0 warnings)
+  2 errors and 0 warnings potentially fixable with the `--fix` option.
+

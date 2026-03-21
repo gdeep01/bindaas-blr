@@ -1,0 +1,7 @@
+project_id = "mnrkmiquglcfmzjeqfla"
+
+[functions.traffic-insights]
+verify_jwt = false
+
+[functions.landslide-predictions]
+verify_jwt = false
