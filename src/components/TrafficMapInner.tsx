@@ -807,13 +807,13 @@ const TrafficMapInnerComponent = ({
         const metricRows = area.metrics
           .map((metric) => {
             const barColor = getMetricBarColor(metric.score);
-            return `<div style="display: flex; align-items: center; gap: 5px; margin: 2px 0;"><span style="font-size: 9px; width: 28px; text-align: center; color: hsl(var(--foreground));">${metric.icon}</span><span style="font-size: 9px; color: hsl(var(--muted-foreground)); width: 85px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${metric.name}</span><div style="flex: 1; height: 2px; background: hsl(var(--border)); overflow: hidden;"><div style="height: 100%; width: ${metric.score}%; background: ${barColor};"></div></div><span style="font-size: 9px; font-weight: 700; color: ${barColor}; width: 20px; text-align: right;">${metric.score}</span></div>`;
+            return `<div style="display: flex; align-items: center; gap: 5px; margin: 2px 0;"><span style="font-size: 9px; color: hsl(var(--muted-foreground)); width: 115px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${metric.name}</span><div style="flex: 1; height: 2px; background: hsl(var(--border)); overflow: hidden;"><div style="height: 100%; width: ${metric.score}%; background: ${barColor};"></div></div><span style="font-size: 9px; font-weight: 700; color: ${barColor}; width: 20px; text-align: right;">${metric.score}</span></div>`;
           })
           .join('');
         const popupContent = `
           <div style="min-width: 240px; max-width: 280px; overflow: hidden; font-size: 13px; background: hsl(var(--card)); color: hsl(var(--foreground));">
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; border-bottom: 1px solid hsl(var(--border)); padding-bottom: 6px;">
-              <div><h4 style="font-weight: 700; color: hsl(var(--foreground)); margin: 0; font-size: 13px;">${emoji} ${area.area}</h4><span style="font-size: 10px; color: ${color}; font-weight: 700;">${label}</span></div>
+              <div><h4 style="font-weight: 700; color: hsl(var(--foreground)); margin: 0; font-size: 14px; font-style: normal; font-family: 'Arial Black', 'Helvetica Neue', sans-serif; letter-spacing: 0.02em;">${emoji} ${area.area}</h4><span style="font-size: 10px; color: ${color}; font-weight: 700;">${label}</span></div>
               <div style="width: 34px; height: 34px; border-radius: 999px; border: 2px solid ${color}; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: ${color};">${area.overallMood}</div>
             </div>
             ${metricRows}
