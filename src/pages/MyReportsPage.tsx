@@ -2,10 +2,13 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AlertTriangle, ClipboardList } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useProfile } from '@/hooks/useProfile';
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables } from '@/integrations/supabase/types';
 import { DataCard } from '@/components/ui/DataCard';
 import { typography } from '@/lib/typography';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { StatusDot } from '@/components/ui/StatusDot';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -47,6 +50,10 @@ const formatReportedAt = (value?: string) => {
 
 const MyReportsPage = () => {
   const { user } = useAuth();
+  const { profile, updateDisplayName, publicName } = useProfile(user?.id);
+  const [nameInput, setNameInput] = useState('');
+  const [nameError, setNameError] = useState('');
+  const [nameSuccess, setNameSuccess] = useState('');
   const [reports, setReports] = useState<GarbageReportRow[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -136,6 +143,49 @@ const MyReportsPage = () => {
         <p className={`${typography.body} mt-2`}>
           {(user.user_metadata as { full_name?: string } | null)?.full_name ?? user.email ?? 'User'}
         </p>
+
+        <div className="mt-4 space-y-2 max-w-sm">
+          <p className="text-xs text-white/40 uppercase tracking-widest">Display Name</p>
+          <p className="text-sm text-white/60">
+            Showing as: <span className="text-white font-semibold">{publicName}</span>
+          </p>
+          {profile?.display_name_updated_at && (() => {
+            const daysSince = (Date.now() - new Date(profile.display_name_updated_at).getTime()) / (1000 * 60 * 60 * 24);
+            const daysLeft = Math.ceil(7 - daysSince);
+            if (daysLeft > 0) return (
+              <p className="text-xs text-white/30">Next change available in {daysLeft} day{daysLeft > 1 ? 's' : ''}</p>
+            );
+          })()}
+          <div className="flex gap-2">
+            <Input
+              type="text"
+              maxLength={30}
+              value={nameInput}
+              onChange={e => setNameInput(e.target.value)}
+              placeholder="Set a display name"
+              className="max-w-xs"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              onClick={async () => {
+                setNameError('');
+                setNameSuccess('');
+                const result = await updateDisplayName(nameInput);
+                if (result.success) {
+                  setNameSuccess('Display name updated!');
+                  setNameInput('');
+                } else {
+                  setNameError(result.error ?? 'Failed to update');
+                }
+              }}
+            >
+              Save
+            </Button>
+          </div>
+          {nameError && <p className="text-xs text-red-400">{nameError}</p>}
+          {nameSuccess && <p className="text-xs text-green-400">{nameSuccess}</p>}
+        </div>
       </div>
 
       <DataCard>

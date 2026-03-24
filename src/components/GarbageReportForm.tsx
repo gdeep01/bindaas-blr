@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { reportTypes } from '@/data/garbageData';
 import { useAuth } from '@/hooks/useAuth';
+import { useProfile } from '@/hooks/useProfile';
 import { supabase } from '@/integrations/supabase/client';
 import { typography } from '@/lib/typography';
 import { toast } from 'sonner';
@@ -54,7 +55,6 @@ export const GarbageReportForm = ({
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [formData, setFormData] = useState({
     location_name: '',
-    reporter_name: '',
     description: '',
     severity: 'medium',
     report_type: 'dumping',
@@ -62,6 +62,7 @@ export const GarbageReportForm = ({
     longitude: '',
   });
   const { user } = useAuth();
+  const { publicName } = useProfile(user?.id);
 
   const isControlled = typeof openProp === 'boolean';
   const open = isControlled ? openProp : internalOpen;
@@ -119,7 +120,6 @@ export const GarbageReportForm = ({
   const resetForm = (): void => {
     setFormData({
       location_name: '',
-      reporter_name: '',
       description: '',
       severity: 'medium',
       report_type: 'dumping',
@@ -210,7 +210,7 @@ export const GarbageReportForm = ({
           },
           body: JSON.stringify({
             location_name: formData.location_name.trim(),
-            reporter_name: formData.reporter_name.trim() || null,
+            reporter_name: publicName,
             description: formData.description.trim() || null,
             severity: formData.severity,
             report_type: formData.report_type,
@@ -319,18 +319,7 @@ export const GarbageReportForm = ({
                     />
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="reporter_name" className={typography.label}>
-                      Reporter Name
-                    </Label>
-                    <Input
-                      id="reporter_name"
-                      placeholder="Your name for the leaderboard"
-                      value={formData.reporter_name}
-                      onChange={(event) => setFormData((current) => ({ ...current, reporter_name: event.target.value }))}
-                      maxLength={80}
-                    />
-                  </div>
+
 
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
