@@ -365,6 +365,12 @@ const TrafficMapInnerComponent = ({
       zoom: initialViewRef.current.zoom,
       zoomControl: true,
       scrollWheelZoom: true,
+      preferCanvas: true,
+      zoomAnimation: true,
+      fadeAnimation: false,
+      markerZoomAnimation: false,
+      tap: false,
+      bounceAtZoomLimits: false,
     });
 
     const isMobile = window.matchMedia('(max-width: 767px)').matches;
