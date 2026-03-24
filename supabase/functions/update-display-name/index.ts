@@ -47,17 +47,17 @@ serve(async (req) => {
 
     // Validate
     if (!display_name || typeof display_name !== 'string') {
-      return new Response(JSON.stringify({ error: 'Display name is required' }), { status: 400, headers: corsHeaders });
+      return new Response(JSON.stringify({ error: 'Username is required' }), { status: 400, headers: corsHeaders });
     }
 
     const trimmed = display_name.trim();
 
     if (trimmed.length < 2 || trimmed.length > 30) {
-      return new Response(JSON.stringify({ error: 'Display name must be between 2 and 30 characters' }), { status: 400, headers: corsHeaders });
+      return new Response(JSON.stringify({ error: 'Username must be between 2 and 30 characters' }), { status: 400, headers: corsHeaders });
     }
 
     if (isProfane(trimmed)) {
-      return new Response(JSON.stringify({ error: 'Display name contains prohibited words' }), { status: 400, headers: corsHeaders });
+      return new Response(JSON.stringify({ error: 'Username contains prohibited words' }), { status: 400, headers: corsHeaders });
     }
 
     // Check existing profile
@@ -67,15 +67,11 @@ serve(async (req) => {
       .eq('id', user.id)
       .maybeSingle();
 
-    // Check 7 day cooldown
+    // If display_name_updated_at is set, user has already used their one change — lock it
     if (existing?.display_name_updated_at) {
-      const daysSince = (Date.now() - new Date(existing.display_name_updated_at).getTime()) / (1000 * 60 * 60 * 24);
-      if (daysSince < 7) {
-        const daysLeft = Math.ceil(7 - daysSince);
-        return new Response(JSON.stringify({ 
-          error: `You can change your display name again in ${daysLeft} day${daysLeft > 1 ? 's' : ''}` 
-        }), { status: 429, headers: corsHeaders });
-      }
+      return new Response(JSON.stringify({ 
+        error: 'Username can only be changed once' 
+      }), { status: 429, headers: corsHeaders });
     }
 
     // Check uniqueness
@@ -87,7 +83,7 @@ serve(async (req) => {
       .maybeSingle();
 
     if (taken) {
-      return new Response(JSON.stringify({ error: 'This display name is already taken' }), { status: 409, headers: corsHeaders });
+      return new Response(JSON.stringify({ error: 'This username is already taken' }), { status: 409, headers: corsHeaders });
     }
 
     // Store history

@@ -50,7 +50,7 @@ const formatReportedAt = (value?: string) => {
 
 const MyReportsPage = () => {
   const { user } = useAuth();
-  const { profile, updateDisplayName, publicName } = useProfile(user?.id);
+  const { profile, updateDisplayName, publicName, canSetUsername } = useProfile(user?.id);
   const [nameInput, setNameInput] = useState('');
   const [nameError, setNameError] = useState('');
   const [nameSuccess, setNameSuccess] = useState('');
@@ -145,46 +145,51 @@ const MyReportsPage = () => {
         </p>
 
         <div className="mt-4 space-y-2 max-w-sm">
-          <p className="text-xs text-white/40 uppercase tracking-widest">Display Name</p>
+          <p className="text-xs text-white/40 uppercase tracking-widest">Username</p>
           <p className="text-sm text-white/60">
             Showing as: <span className="text-white font-semibold">{publicName}</span>
           </p>
-          {profile?.display_name_updated_at && (() => {
-            const daysSince = (Date.now() - new Date(profile.display_name_updated_at).getTime()) / (1000 * 60 * 60 * 24);
-            const daysLeft = Math.ceil(7 - daysSince);
-            if (daysLeft > 0) return (
-              <p className="text-xs text-white/30">Next change available in {daysLeft} day{daysLeft > 1 ? 's' : ''}</p>
-            );
-          })()}
-          <div className="flex gap-2">
-            <Input
-              type="text"
-              maxLength={30}
-              value={nameInput}
-              onChange={e => setNameInput(e.target.value)}
-              placeholder="Set a display name"
-              className="max-w-xs"
-            />
-            <Button
-              type="button"
-              variant="outline"
-              onClick={async () => {
-                setNameError('');
-                setNameSuccess('');
-                const result = await updateDisplayName(nameInput);
-                if (result.success) {
-                  setNameSuccess('Display name updated!');
-                  setNameInput('');
-                } else {
-                  setNameError(result.error ?? 'Failed to update');
-                }
-              }}
-            >
-              Save
-            </Button>
-          </div>
-          {nameError && <p className="text-xs text-red-400">{nameError}</p>}
-          {nameSuccess && <p className="text-xs text-green-400">{nameSuccess}</p>}
+
+          {canSetUsername && (
+            <>
+              <p className="text-xs text-white/30">
+                {profile?.display_name 
+                  ? 'You have one username change remaining' 
+                  : 'Set a username — you can change it once after this'}
+              </p>
+              <div className="flex gap-2">
+                <Input
+                  type="text"
+                  maxLength={30}
+                  value={nameInput}
+                  onChange={e => setNameInput(e.target.value)}
+                  placeholder="Choose a username"
+                  className="max-w-xs"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={async () => {
+                    setNameError('');
+                    setNameSuccess('');
+                    const result = await updateDisplayName(nameInput);
+                    if (result.success) {
+                      setNameSuccess('Username updated!');
+                      setNameInput('');
+                      setTimeout(() => setNameSuccess(''), 3000);
+                    } else {
+                      setNameError(result.error ?? 'Failed to update username');
+                      setTimeout(() => setNameError(''), 3000);
+                    }
+                  }}
+                >
+                  Save
+                </Button>
+              </div>
+              {nameError && <p className="text-xs text-red-400">{nameError}</p>}
+              {nameSuccess && <p className="text-xs text-green-400">{nameSuccess}</p>}
+            </>
+          )}
         </div>
       </div>
 
