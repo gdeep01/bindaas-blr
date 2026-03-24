@@ -782,3 +782,23 @@ li + li {
 .bindaas-popup .leaflet-popup-close-button:hover {
   color: white !important;
 }
+
+/* Leaflet smooth zoom */
+.leaflet-zoom-animated {
+  transition: transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+}
+
+.leaflet-zoom-anim .leaflet-zoom-animated {
+  will-change: transform;
+}
+
+/* Smooth zoom control buttons */
+.leaflet-control-zoom a {
+  transition: background-color 0.15s ease, color 0.15s ease !important;
+}
+
+/* Remove tap highlight flash on mobile */
+.leaflet-container {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+}
