@@ -144,7 +144,7 @@ const TrafficMapComponent = ({
 
   const mapHeightClass = useMemo(() => {
     if (variant === 'fullpage') {
-      return isMobile ? 'h-[calc(100dvh-13rem)]' : 'h-[500px]';
+      return isMobile ? 'h-[calc(100dvh-10rem)]' : 'h-[500px]';
     }
     return isMobile ? 'h-[260px]' : 'h-[250px] sm:h-[300px] md:h-[400px]';
   }, [isMobile, variant]);
@@ -372,7 +372,7 @@ const TrafficMapComponent = ({
 
         <div
           className={`relative overflow-hidden ${mapHeightClass} ${variant === 'homepage' ? 'rounded-xl border border-white/5' : ''}`}
-          style={{ maxWidth: '100%', touchAction: 'pan-y' }}
+          style={{ maxWidth: '100%', touchAction: 'none' }}
         >
           {showMobileOverlayControls ? (
             <>
@@ -498,6 +498,8 @@ const TrafficMapComponent = ({
               style={{
                 width: !isMobile && mapMode === 'traffic' && showLayerPanel && !isHomepage && !hideLayerControls ? `calc(100% - ${LAYERS_PANEL_WIDTH}px)` : '100%',
                 transition: 'width 200ms ease',
+                transform: 'translateZ(0)',
+                willChange: 'transform',
               }}
             >
               <TrafficMapInner
