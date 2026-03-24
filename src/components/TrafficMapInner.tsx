@@ -382,6 +382,32 @@ const TrafficMapInnerComponent = ({
       mapRef.current.on('mouseout', () => mapRef.current?.scrollWheelZoom.disable());
     }
 
+    mapRef.current.on('zoomend', () => {
+      const zoom = mapRef.current?.getZoom() ?? 11;
+      const container = mapContainerRef.current;
+      if (!container) return;
+
+      // Price markers — only show at zoom 13+
+      container.querySelectorAll('.custom-price-marker').forEach((el) => {
+        (el as HTMLElement).style.display = zoom >= 13 ? '' : 'none';
+      });
+
+      // Metro markers — only show at zoom 12+
+      container.querySelectorAll('.custom-metro-marker').forEach((el) => {
+        (el as HTMLElement).style.display = zoom >= 12 ? '' : 'none';
+      });
+
+      // Mood markers — only show at zoom 11+
+      container.querySelectorAll('.custom-mood-marker').forEach((el) => {
+        (el as HTMLElement).style.display = zoom >= 11 ? '' : 'none';
+      });
+    });
+
+    // Apply visibility on initial load
+    mapRef.current.once('load', () => {
+      mapRef.current?.fire('zoomend');
+    });
+
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
       maxZoom: 19,

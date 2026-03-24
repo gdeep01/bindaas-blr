@@ -802,3 +802,8 @@ li + li {
   -webkit-tap-highlight-color: transparent;
   touch-action: none;
 }
+
+.custom-price-marker,
+.custom-metro-marker {
+  transition: opacity 0.15s ease;
+}
