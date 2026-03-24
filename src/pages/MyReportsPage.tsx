@@ -145,10 +145,7 @@ const MyReportsPage = () => {
         </p>
 
         <div className="mt-4 space-y-2 max-w-sm">
-          <p className="text-xs text-white/40 uppercase tracking-widest">Username</p>
-          <p className="text-sm text-white/60">
-            Showing as: <span className="text-white font-semibold">{publicName}</span>
-          </p>
+          <p className="text-xs text-white/40 uppercase tracking-widest">Username: <span className="text-white font-semibold normal-case">{publicName}</span></p>
 
           {canSetUsername && (
             <>
