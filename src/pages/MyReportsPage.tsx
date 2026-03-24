@@ -152,11 +152,6 @@ const MyReportsPage = () => {
 
           {canSetUsername && (
             <>
-              <p className="text-xs text-white/30">
-                {profile?.display_name 
-                  ? 'You have one username change remaining' 
-                  : 'Set a username — you can change it once after this'}
-              </p>
               <div className="flex gap-2">
                 <Input
                   type="text"

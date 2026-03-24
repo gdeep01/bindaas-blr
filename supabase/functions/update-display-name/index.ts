@@ -67,10 +67,10 @@ serve(async (req) => {
       .eq('id', user.id)
       .maybeSingle();
 
-    // If display_name_updated_at is set, user has already used their one change — lock it
-    if (existing?.display_name_updated_at) {
+    // Username is permanent once set
+    if (existing?.display_name) {
       return new Response(JSON.stringify({ 
-        error: 'Username can only be changed once' 
+        error: 'Username cannot be changed once set' 
       }), { status: 429, headers: corsHeaders });
     }
 

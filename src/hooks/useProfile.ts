@@ -53,9 +53,8 @@ export function useProfile(userId: string | undefined) {
   // What others see — display name if set, otherwise real name
   const publicName = profile?.display_name ?? profile?.real_name ?? 'Anonymous';
 
-  // true if user has never set a username OR has set it but never changed it (display_name_updated_at is null)
-  // false if display_name_updated_at is set — means they've used their one change
-  const canSetUsername = !profile?.display_name || !profile?.display_name_updated_at;
+  // true only if user has never set a username — once set, it's permanent
+  const canSetUsername = !profile?.display_name;
 
   useEffect(() => { void fetchProfile(); }, [userId]);
 
