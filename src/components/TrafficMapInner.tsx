@@ -598,8 +598,7 @@ const TrafficMapInnerComponent = ({
           const popupContent = `
             <div style="${POPUP_PANEL}">
               <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;"><span style="display: inline-block; padding: 3px 8px; background: hsl(var(--secondary)); border: 1px solid ${severityColor}; border-radius: 2px; font-size: 10px; font-weight: 700; color: ${severityColor}; text-transform: uppercase;">${safeText(incident.severity, 'Unknown')} Severity</span></div>
-              <div style="margin-bottom: 6px; font-size: 11px; font-weight: 700; color: hsl(var(--muted-foreground)); text-transform: uppercase; letter-spacing: 0.12em;">Incident</div>
-              <p style="${POPUP_ROW} ${POPUP_TEXT}"><strong>Location:</strong> ${safeText(incident.location)}</p>
+              <h4 style="${POPUP_TITLE}">${safeText(incident.location)}</h4>
               <p style="${POPUP_ROW} ${POPUP_TEXT}">${safeText(incident.description)}</p>
               ${incident.delay ? `<p style="margin: 8px 0 0; font-size: 12px; color: ${severityColor}; font-weight: 700;">Delay: ${safeText(incident.delay)}</p>` : ''}
             </div>
