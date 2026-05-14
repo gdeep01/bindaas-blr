@@ -1,4 +1,4 @@
-import { useState, memo } from 'react';
+import { useState, memo, useMemo } from 'react';
 import { ChevronDown, ChevronUp, Home } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getMoodLabel, getMoodColor, getMoodColorClass, type BestForTag } from '@/data/moodData';
@@ -25,7 +25,18 @@ export const AreaMoodCard = memo(({
 }) => {
   const [expanded, setExpanded] = useState(false);
   const compareLimitReached = !compared && compareCount >= MAX_COMPARE;
-  const price = LOCALITY_PRICE_MAP[area.area];
+  const price = useMemo(() => {
+    const direct = LOCALITY_PRICE_MAP[area.area];
+    if (direct) return direct;
+    
+    // Fuzzy match for minor naming differences
+    const names = Object.keys(LOCALITY_PRICE_MAP);
+    const bestMatch = names.find(n => 
+      area.area.toLowerCase().includes(n.toLowerCase()) || 
+      n.toLowerCase().includes(area.area.toLowerCase())
+    );
+    return bestMatch ? LOCALITY_PRICE_MAP[bestMatch] : null;
+  }, [area.area]);
 
   const handleToggleExpanded = () => {
     setExpanded((current) => !current);

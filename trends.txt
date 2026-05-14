@@ -1,0 +1,114 @@
+Sadashivanagar: 10.5
+Lavelle Road: 9.8
+Cubbon Park Area: 9.2
+Cunningham Road: 9.0
+MG Road: 8.5
+Brigade Road: 8.2
+Vasanth Nagar: 11.2
+Richmond Town: 9.5
+Malleshwaram: 10.1
+Benson Town: 9.3
+Langford Town: 9.0
+Frazer Town: 8.8
+Cox Town: 7.5
+Wilson Garden: 7.2
+Ulsoor: 8.5
+Austin Town: 7.8
+Shivajinagar: 8.5
+Jayanagar: 13.7
+Jayanagar 4th Block: 13.5
+Basavanagudi: 12.0
+Sarakki: 10.5
+Padmanabhanagar: 9.8
+Girinagar: 9.5
+JP Nagar Phase 1-3: 10.2
+JP Nagar Phase 4-6: 9.5
+JP Nagar Phase 7-8: 9.0
+JP Nagar: 10.0
+Banashankari: 18.8
+Banashankari Stage 3: 10.8
+BTM Layout: 11.5
+Bannerghatta Road: 10.2
+Hosa Road: 12.0
+Hulimavu: 10.5
+Bilekahalli: 10.0
+Arekere: 9.8
+Begur: 9.5
+Begur Road: 9.5
+Gottigere: 9.2
+Uttarahalli: 9.0
+Kanakapura Road: 9.5
+Bommanahalli: 10.0
+Haralur: 11.0
+Haralur Road: 11.0
+Choodasandra: 9.0
+Electronic City: 24.4
+Electronic City Phase 2: 12.0
+Electronic City Toll: 10.0
+Chandapura: 9.5
+Attibele: 8.5
+Jigani: 8.0
+Madivala: 10.5
+Silk Board Junction: 10.0
+Silk Board Area: 10.0
+Koramangala: 12.5
+Indiranagar: 11.8
+Domlur: 10.5
+Kodihalli: 10.2
+Old Airport Road: 10.0
+Murugeshpalya: 9.8
+HSR Layout: 12.0
+Bellandur: 11.5
+Sarjapur Road: 13.0
+Marathahalli: 11.2
+Marathahalli Bridge: 11.0
+Whitefield: 14.5
+Whitefield Main Road: 13.5
+ITPL: 13.0
+Hoodi: 12.5
+Brookefield: 12.0
+Kundalahalli: 11.5
+Kaggadasapura: 10.5
+Mahadevapura: 11.0
+KR Puram: 10.8
+Varthur: 11.0
+Kadugodi: 10.5
+Hoskote: 9.5
+Banaswadi: 10.2
+HRBR Layout: 10.5
+HBR Layout: 10.0
+Kammanahalli: 9.8
+Horamavu: 1.6
+Horamavu Agara: 1.6
+Kalyan Nagar: -11.0
+Ramamurthy Nagar: 13.2
+Hebbal: 10.5
+Manyata Tech Park Area: 11.0
+RT Nagar: 9.5
+Sahakara Nagar: 22.0
+Vidyaranyapura: 9.0
+Jakkur: 10.0
+Hennur Road: 9.5
+Thanisandra: 9.0
+Kothanur: 8.5
+Kogilu: 9.0
+Yelahanka: 9.0
+Bagalur Road: 12.0
+Devanahalli: 11.0
+Rajajinagar: 11.5
+Yeshwanthpur: 10.5
+Yeshwanthpur Circle: 10.5
+BEL Circle: 10.2
+Mahalakshmi Layout: 10.0
+Vijayanagar: 9.8
+Chord Road: 9.5
+Nagarbhavi: 9.2
+RR Nagar: 9.0
+Mysore Road: 8.5
+Magadi Road: 8.2
+Rajarajeshwari Nagar: 8.0
+Kengeri: 8.5
+Peenya: 8.0
+Tumkur Road: 8.5
+BEML Layout: 7.5
+Nelamangala: 7.0

@@ -1,6 +1,6 @@
 # Bindaas BLR — Complete Application Documentation
 
-> **Last Updated:** March 2026
+> **Last Updated:** May 2026
 
 ---
 
@@ -117,7 +117,7 @@ It auto-refreshes every **30 seconds** and combines multiple real-time APIs with
 | Mood Index — 80+ area scores | `src/data/moodData.ts` | All 8 livability metrics per area are hardcoded estimates (0–100) based on geographic proximity analysis. |
 | Growth data per area | `src/data/moodData.ts` | Infrastructure, commercial, price momentum, connectivity, undervaluation scores — manually assigned based on BMRCL announcements, real estate trends, and public project data. |
 | "Best For" tag thresholds | `src/data/moodData.ts` | Rule-based: e.g., Schools≥75 + Healthcare≥70 + Parks≥60 → "Families" |
-| Fallback traffic data | `src/data/trafficData.ts` | Legacy static data, used as fallback if API fails (currently not actively used since API integration). |
+
 
 ### 🔄 COMPUTED / DERIVED DATA
 

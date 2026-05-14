@@ -15,7 +15,7 @@ import {
 
 const navItems = [
   { title: 'Dashboard', url: '/', icon: LayoutDashboard },
-  { title: 'Traffic Map', url: '/map', icon: Map },
+  { title: 'Live City Map', url: '/map', icon: Map },
   { title: 'Smart Predictions', url: '/ai-insights', icon: Brain },
   { title: 'Area Livability', url: '/mood-index', icon: Smile },
   { title: 'Garbage Reports', url: '/garbage', icon: Trash2 },

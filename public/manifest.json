@@ -1,7 +1,7 @@
 {
   "name": "Bindaas BLR",
   "short_name": "Bindaas BLR",
-  "description": "Real-time traffic and livability intelligence for Bengaluru",
+  "description": "Bengaluru's real-time civic intelligence platform",
   "start_url": "https://bindaas-blr.vercel.app/",
   "scope": "https://bindaas-blr.vercel.app/",
   "display": "standalone",

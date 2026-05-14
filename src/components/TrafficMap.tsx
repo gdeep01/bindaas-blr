@@ -286,7 +286,7 @@ const TrafficMapComponent = ({
         {showDesktopHeader ? (
           <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-2">
-              <h3 className={typography.sectionTitle}>{title || 'Traffic Map'}</h3>
+              <h3 className={typography.sectionTitle}>{title || 'Live City Map'}</h3>
               {allowMoodMode ? (
                 <div className="ml-2 flex items-center gap-1 rounded-xl border border-white/10 bg-card p-1">
                   <button
@@ -327,8 +327,8 @@ const TrafficMapComponent = ({
             <div className="max-w-[1800px] mx-auto px-4 md:px-8 xl:px-12">
               {!hideTitle ? (
                 <>
-                  <h1 className={`${typography.h1} mb-2 relative z-10`}>{title || 'Traffic Map'}</h1>
-                  <p className={`${typography.body} mb-4`}>Live traffic, incidents, garbage hotspots, and natural disaster data on one map.</p>
+                  <h1 className={`${typography.h1} mb-2 relative z-10`}>{title || 'Live City Map'}</h1>
+                  <p className={`${typography.body} mb-4`}>Live traffic incidents, property prices, metro access and natural disaster data on one map.</p>
                 </>
               ) : null}
               {!hideLayerControls ? (
@@ -403,8 +403,8 @@ const TrafficMapComponent = ({
                       type="button"
                       onClick={() => setMapMode('traffic')}
                       className={`min-h-[36px] rounded-full px-4 text-[0.7rem] font-black tracking-wide transition-all ${mapMode === 'traffic'
-                          ? 'bg-orange-500 text-white'
-                          : 'text-white/60 hover:text-white'
+                        ? 'bg-orange-500 text-white'
+                        : 'text-white/60 hover:text-white'
                         }`}
                     >
                       <span className="inline-flex items-center gap-1.5">
@@ -416,8 +416,8 @@ const TrafficMapComponent = ({
                       type="button"
                       onClick={() => setMapMode('mood')}
                       className={`min-h-[36px] rounded-full px-4 text-[0.7rem] font-black tracking-wide transition-all ${mapMode === 'mood'
-                          ? 'bg-orange-500 text-white'
-                          : 'text-white/60 hover:text-white'
+                        ? 'bg-orange-500 text-white'
+                        : 'text-white/60 hover:text-white'
                         }`}
                     >
                       <span className="inline-flex items-center gap-1.5">
