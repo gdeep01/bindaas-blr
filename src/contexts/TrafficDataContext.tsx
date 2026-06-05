@@ -477,18 +477,15 @@ export const TrafficDataProvider = ({ children }: { children: ReactNode }) => {
     const disasterAlerts = (disasterResponse.data || []) as DisasterAlertRow[];
     const seen = new Set<string>();
     const latestRowsByLocation = latestTrafficRows.filter((row) => {
-  if (
-    row.data_source === 'tomtom-incidents' ||
-    row.data_source === 'tomtom-roadworks'
-  ) {
-    return false;
-  }
-  if (seen.has(row.location_name)) {
-    return false;
-  }
-  seen.add(row.location_name);
-  return true;
-});
+      if (!isRoadTrafficRow(row)) {
+        return false;
+      }
+      if (seen.has(row.location_name)) {
+        return false;
+      }
+      seen.add(row.location_name);
+      return true;
+    });
     const latestRecordedRow = latestTrafficRows.reduce<TrafficHistoryRow | null>((latest, row) => {
       if (!latest) {
         return row;
