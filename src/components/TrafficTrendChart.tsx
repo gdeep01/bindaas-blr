@@ -65,7 +65,7 @@ export const TrafficTrendChart = ({ data, title }: TrafficTrendChartProps) => {
           .gte('recorded_at', sinceIso)
           .lte('recorded_at', untilIso)
 	.eq('data_source', 'tomtom')
-          .order('recorded_at', { ascending: true })
+          .order('recorded_at', { ascending: false })
           .limit(300);
 
         if (error) {
@@ -79,7 +79,7 @@ export const TrafficTrendChart = ({ data, title }: TrafficTrendChartProps) => {
           return;
         }
 
-        const rows = historyRows ?? [];
+        const rows = [...(historyRows ?? [])].reverse();
         if (!rows.length) {
           if (active) {
             const flat = new Map<number, number>();

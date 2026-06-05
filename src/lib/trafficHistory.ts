@@ -3,6 +3,23 @@ import type { Tables } from '@/integrations/supabase/types';
 
 type TrafficHistoryRow = Tables<'traffic_history'>;
 
+const TRANSIT_LOCATION_NAMES = new Set([
+  'kempegowda international airport',
+  'ksr bengaluru city railway station',
+  'yeshwanthpur railway station',
+  'bengaluru cantonment railway station',
+]);
+
+const isTransitLocation = (name: string) => {
+  const normalized = name.trim().toLowerCase();
+  return TRANSIT_LOCATION_NAMES.has(normalized) || normalized.includes('railway station') || normalized.includes('international airport');
+};
+
+const isRoadTrafficRow = (row: TrafficHistoryRow) =>
+  row.data_source !== 'tomtom-incidents' &&
+  row.data_source !== 'tomtom-roadworks' &&
+  !isTransitLocation(row.location_name);
+
 const toHourLabel = (hour: number) => {
   const normalized = ((hour % 24) + 24) % 24;
   const period = normalized >= 12 ? 'PM' : 'AM';
@@ -23,10 +40,7 @@ export function buildTrafficSnapshot(rows: TrafficHistoryRow[], previous?: Traff
     return previous ?? null;
   }
 
-  const trafficOnlyRows = rows.filter(
-    row => row.data_source !== 'tomtom-incidents' && 
-           row.data_source !== 'tomtom-roadworks'
-  );
+  const trafficOnlyRows = rows.filter(isRoadTrafficRow);
 
   const latestByLocation = new Map<string, TrafficHistoryRow>();
   for (const row of trafficOnlyRows) {
@@ -84,10 +98,7 @@ export function buildHourlyTrend(rows: TrafficHistoryRow[]): HourlyDataPoint[] {
     return Number(hourStr);
   };
 
-  const filteredRows = rows.filter(
-    row => row.data_source !== 'tomtom-incidents' && 
-           row.data_source !== 'tomtom-roadworks'
-  );
+  const filteredRows = rows.filter(isRoadTrafficRow);
   const sortedRows = [...filteredRows].sort(
     (left, right) => new Date(left.recorded_at).getTime() - new Date(right.recorded_at).getTime(),
   );
@@ -137,10 +148,7 @@ export function buildTrafficMetrics(
     return previous ?? null;
   }
 
-  const filteredRows = rows.filter(
-    row => row.data_source !== 'tomtom-incidents' && 
-           row.data_source !== 'tomtom-roadworks'
-  );
+  const filteredRows = rows.filter(isRoadTrafficRow);
   const hourlyTrend = buildHourlyTrend(filteredRows);
   const trendValues = hourlyTrend
     .map((point) => ({ label: point.time, value: point.congestion ?? point.predicted ?? 0 }))

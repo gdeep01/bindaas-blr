@@ -89,8 +89,8 @@ const HeroMacroTrendChart = ({ data }: { data: Array<{ time: string; congestion?
           contentStyle={{ background: '#050505', border: `1px solid ${C.border}`, borderRadius: 0, color: C.white, fontSize: 10 }}
           labelStyle={{ color: C.orange }}
         />
-        <Line type="monotone" dataKey="congestion" stroke={C.orange} strokeWidth={2} dot={false} connectNulls={false} isAnimationActive={false} />
-        <Line type="monotone" dataKey="predicted" stroke={C.green} strokeWidth={2} strokeDasharray="4 4" dot={false} connectNulls={false} isAnimationActive={false} />
+        <Line type="monotone" dataKey="congestion" stroke={C.orange} strokeWidth={2} dot={{ r: 2, fill: C.orange }} connectNulls={false} isAnimationActive={false} />
+        <Line type="monotone" dataKey="predicted" stroke={C.green} strokeWidth={2} strokeDasharray="4 4" dot={{ r: 2, fill: C.green }} connectNulls={false} isAnimationActive={false} />
       </LineChart>
     </ResponsiveContainer>
   );
@@ -144,14 +144,12 @@ const BloombergTerminalHero = () => {
       const now = h.congestionLevel;
       return { name: h.name, now, h1: h.congestion1h, h3: h.congestion3h, real: true };
     });
-    return BLR_JUNCTIONS.map(name => ({ name, now: 0, h1: 0, h3: 0, real: false }));
+    return [];
   }, [hotspots]);
 
   // Ticker items
   const tickerItems = useMemo(() => {
-    const items = hotspots.length > 0
-      ? hotspots.map(h => ({ name: h.name, pct: h.congestionLevel }))
-      : BLR_JUNCTIONS.map(n => ({ name: n, pct: 0 }));
+    const items = hotspots.map(h => ({ name: h.name, pct: h.congestionLevel }));
     // Duplicate exactly once for seamless scroll
     return [...items, ...items];
   }, [hotspots]);
@@ -165,12 +163,6 @@ const BloombergTerminalHero = () => {
         list.push({ name: h.name, congestionLevel: h.congestionLevel, real: true });
       });
     }
-    for (const name of BLR_JUNCTIONS) {
-      if (list.length >= 12) break;
-      if (!list.some(item => item.name === name)) {
-        list.push({ name, congestionLevel: 0, real: false });
-      }
-    }
     return list;
   }, [hotspots]);
 
@@ -180,6 +172,19 @@ const BloombergTerminalHero = () => {
     { label: 'RAIN RISK', value: rainRisk, unit: '%', forceColor: typeof rainRisk === 'number' ? (rainRisk > 60 ? C.red : rainRisk >= 40 ? C.amber : C.green) : C.muted },
     { label: 'REPORTS', value: userReportsCount ?? 0, unit: '', forceColor: C.white },
   ];
+  const heroTrendData = useMemo(() => {
+    if (hourlyTrend.length > 0) return hourlyTrend;
+    if (typeof sentimentScore !== 'number') return [];
+    return [{
+      time: new Date().toLocaleTimeString('en-IN', {
+        timeZone: 'Asia/Kolkata',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+      }),
+      congestion: sentimentScore,
+    }];
+  }, [hourlyTrend, sentimentScore]);
 
   // ── Inline styles (no CSS classes except ticker animation) ──
   const S = {
@@ -261,22 +266,32 @@ const BloombergTerminalHero = () => {
 
         <div style={{ padding: '9px 12px 6px', borderBottom: `1px solid ${C.border}` }}>
           <div style={{ color: C.orange, fontSize: 8, fontWeight: 700, marginBottom: 6 }}>LIVE CORRIDORS</div>
+          {tableRows.length > 0 && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 40px 40px 40px', alignItems: 'center', gap: 8, fontSize: 8, fontWeight: 700, color: C.orange, borderBottom: `1px solid ${C.border}`, paddingBottom: 4, marginBottom: 5 }}>
+              <span>NAME</span>
+              <span style={{ textAlign: 'right' }}>NOW</span>
+              <span style={{ textAlign: 'right' }}>1H</span>
+              <span style={{ textAlign: 'right' }}>3H</span>
+            </div>
+          )}
           <div style={{ display: 'grid', gap: 5 }}>
-            {tableRows.slice(0, 4).map((row) => (
-              <div key={row.name} style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto auto auto', alignItems: 'center', gap: 8, fontSize: 10, fontWeight: 700 }}>
+            {tableRows.length > 0 ? tableRows.slice(0, 4).map((row) => (
+              <div key={row.name} style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 40px 40px 40px', alignItems: 'center', gap: 8, fontSize: 10, fontWeight: 700 }}>
                 <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: C.white }}>{row.name}</span>
-                <span style={{ color: row.real ? congColor(row.now) : C.muted }}>{row.real ? `${row.now}%` : '--'}</span>
-                <span style={{ color: row.real && typeof row.h1 === 'number' ? congColor(row.h1) : C.muted }}>{row.real && typeof row.h1 === 'number' ? `${row.h1}%` : '--'}</span>
-                <span style={{ color: row.real && typeof row.h3 === 'number' ? congColor(row.h3) : C.muted }}>{row.real && typeof row.h3 === 'number' ? `${row.h3}%` : '--'}</span>
+                <span style={{ color: row.real ? congColor(row.now) : C.muted, textAlign: 'right' }}>{row.real ? `${row.now}%` : '--'}</span>
+                <span style={{ color: row.real && typeof row.h1 === 'number' ? congColor(row.h1) : C.muted, textAlign: 'right' }}>{row.real && typeof row.h1 === 'number' ? `${row.h1}%` : 'N/A'}</span>
+                <span style={{ color: row.real && typeof row.h3 === 'number' ? congColor(row.h3) : C.muted, textAlign: 'right' }}>{row.real && typeof row.h3 === 'number' ? `${row.h3}%` : 'N/A'}</span>
               </div>
-            ))}
+            )) : (
+              <div style={{ color: C.muted, fontSize: 10, fontWeight: 700 }}>WAITING FOR CORRIDOR DATA</div>
+            )}
           </div>
         </div>
 
-        <div style={{ padding: '8px 12px', height: 120, borderBottom: `1px solid ${C.border}` }}>
+        <div style={{ padding: '8px 12px', height: 180, borderBottom: `1px solid ${C.border}` }}>
           <div style={{ color: C.orange, fontSize: 8, fontWeight: 700, marginBottom: 4 }}>MACRO TREND (24H)</div>
-          <div style={{ height: 92 }}>
-            <HeroMacroTrendChart data={hourlyTrend} />
+          <div style={{ height: 150 }}>
+            <HeroMacroTrendChart data={heroTrendData} />
           </div>
         </div>
 
@@ -383,7 +398,7 @@ const BloombergTerminalHero = () => {
           </div>
           {/* Data rows */}
           <div className="corridors-scroll" style={{ flex: 1, overflowY: 'auto' }}>
-            {tableRows.slice(0, 8).map((row, i) => {
+            {tableRows.length > 0 ? tableRows.slice(0, 8).map((row, i) => {
               const t = row.real ? trendSymbol(row.now) : { sym: '→', col: C.muted };
               return (
                 <div key={i} style={{
@@ -397,17 +412,19 @@ const BloombergTerminalHero = () => {
                     {row.real ? `${row.now}%` : '--'}
                   </span>
                   <span style={{ flex: 1, textAlign: 'right', fontSize: '13px', fontWeight: 700, color: row.real && typeof row.h1 === 'number' ? congColor(row.h1) : C.muted }}>
-                    {row.real && typeof row.h1 === 'number' ? `${row.h1}%` : '--'}
+                    {row.real && typeof row.h1 === 'number' ? `${row.h1}%` : 'N/A'}
                   </span>
                   <span style={{ flex: 1, textAlign: 'right', fontSize: '13px', fontWeight: 700, color: row.real && typeof row.h3 === 'number' ? congColor(row.h3) : C.muted }}>
-                    {row.real && typeof row.h3 === 'number' ? `${row.h3}%` : '--'}
+                    {row.real && typeof row.h3 === 'number' ? `${row.h3}%` : 'N/A'}
                   </span>
                   <span style={{ width: 40, textAlign: 'right', fontSize: '11px', color: t.col }}>
                     {t.sym}
                   </span>
                 </div>
               );
-            })}
+            }) : (
+              <div style={{ color: C.muted, fontSize: '10px', fontWeight: 700, paddingTop: 16 }}>WAITING FOR CORRIDOR DATA</div>
+            )}
           </div>
         </div>
 
@@ -418,7 +435,7 @@ const BloombergTerminalHero = () => {
               MACRO TREND (24H)
             </div>
             <div style={{ flex: 1, minHeight: 0 }}>
-              <HeroMacroTrendChart data={hourlyTrend} />
+              <HeroMacroTrendChart data={heroTrendData} />
             </div>
           </div>
         </div>
@@ -427,7 +444,7 @@ const BloombergTerminalHero = () => {
       {/* ─── ROW 4: CORRIDOR STRIP 40px ─── */}
       <div style={S.strip}>
         <div className="strip-scroll" style={{ width: '100%', height: '100%', display: 'flex' }}>
-          {corridorStrip.map((c, i) => (
+          {corridorStrip.length > 0 ? corridorStrip.map((c, i) => (
             <div key={i} style={{
               flexShrink: 0, width: '120px', borderRight: `1px solid ${C.border}`,
               display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', paddingTop: '4px', paddingLeft: '8px', paddingRight: '8px',
@@ -444,7 +461,9 @@ const BloombergTerminalHero = () => {
                 <div style={{ flex: 1, background: c.real && c.congestionLevel > 70 ? C.red : '#111' }} />
               </div>
             </div>
-          ))}
+          )) : (
+            <div style={{ color: C.muted, fontSize: '10px', fontWeight: 700, display: 'flex', alignItems: 'center', paddingLeft: 12 }}>WAITING FOR CORRIDOR DATA</div>
+          )}
         </div>
       </div>
 
@@ -562,6 +581,19 @@ const DashboardPage = () => {
   );
 
   const sentiment = trafficData?.sentimentScore ?? 0;
+  const dashboardTrendData = useMemo(() => {
+    if (hourlyTrend.length > 0) return hourlyTrend;
+    if (typeof trafficData?.sentimentScore !== 'number') return [];
+    return [{
+      time: new Date().toLocaleTimeString('en-IN', {
+        timeZone: 'Asia/Kolkata',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+      }),
+      congestion: trafficData.sentimentScore,
+    }];
+  }, [hourlyTrend, trafficData?.sentimentScore]);
 
   const TF = "'Courier New', 'IBM Plex Mono', monospace";
   const panelStyle = { background: '#0d0d0d', border: '1px solid #1a1a1a', padding: '10px 12px', fontFamily: TF } as const;
@@ -626,7 +658,7 @@ const DashboardPage = () => {
 
         <section className="grid gap-4 lg:grid-cols-3">
           <div className="lg:col-span-2">
-            <TrafficTrendChart data={hourlyTrend.length > 0 ? hourlyTrend : []} title="Today's Traffic Pattern" />
+            <TrafficTrendChart data={dashboardTrendData} title="Today's Traffic Pattern" />
           </div>
 
           <DataCard>

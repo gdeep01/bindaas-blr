@@ -397,8 +397,8 @@ export const TrafficDataProvider = ({ children }: { children: ReactNode }) => {
         .from('traffic_history')
         .select('*')
         .gte('recorded_at', last24HoursIso)
-        .order('recorded_at', { ascending: true })
-        .limit(1000),
+        .order('recorded_at', { ascending: false })
+        .limit(3000),
       supabase
         .from('data_refresh_heartbeat')
         .select('*')
@@ -470,7 +470,7 @@ export const TrafficDataProvider = ({ children }: { children: ReactNode }) => {
     setDataError(null);
 
     const latestTrafficRows = (latestTrafficResponse.data || []) as TrafficHistoryRow[];
-    const historyRows = (trafficHistoryResponse.data || []) as TrafficHistoryRow[];
+    const historyRows = [...((trafficHistoryResponse.data || []) as TrafficHistoryRow[])].reverse();
     const heartbeat = heartbeatResponse.data as HeartbeatRow | null;
     const latestAi = aiResponse.data as AIPredictionRow | null;
     const garbageRows = (garbageResponse.data || []) as GarbageReportRow[];
