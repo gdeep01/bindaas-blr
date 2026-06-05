@@ -391,11 +391,13 @@ export const TrafficDataProvider = ({ children }: { children: ReactNode }) => {
       supabase
         .from('traffic_history')
         .select('*')
+        .eq('data_source', 'tomtom')
         .order('recorded_at', { ascending: false })
-        .limit(100),
+        .limit(1000),
       supabase
         .from('traffic_history')
         .select('*')
+        .eq('data_source', 'tomtom')
         .gte('recorded_at', last24HoursIso)
         .order('recorded_at', { ascending: false })
         .limit(3000),
