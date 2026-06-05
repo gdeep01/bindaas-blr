@@ -2,30 +2,354 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Route } from 'lucide-react';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { TrafficTrendChart } from '@/components/TrafficTrendChart';
-import { TrafficSentimentGauge } from '@/components/dashboard/TrafficSentimentGauge';
 import { DataCard } from '@/components/ui/DataCard';
 import { StatusDot } from '@/components/ui/StatusDot';
 import { useTrafficData } from '@/contexts/TrafficDataContext';
-import heroImage from '@/assets/bengaluru-hero.jpeg';
 import { AirportStationsCard } from '@/components/AirportStationsCard';
 import { bengaluruAreaMoods, getMoodColor } from '@/data/moodData';
 import { typography } from '@/lib/typography';
 
+// ─── BLOOMBERG TERMINAL HERO ───────────────────────────────────────
+// Pure black, dense, monospace. No rounded corners. No shadows.
+// Layout: 28px header + 24px ticker + 240px main + 40px strip + 48px bar = 380px
+
+const BLR_JUNCTIONS = [
+  'SILK BOARD', 'HEBBAL', 'KORAMANGALA', 'WHITEFIELD',
+  'MARATHAHALLI', 'KR CIRCLE', 'OUTER RING RD', 'SARJAPUR RD',
+  'HOSUR RD', 'BANNERGHATTA RD', 'TUMKUR RD', 'OLD MADRAS RD',
+] as const;
+
+const FONT = "'Akzidenz-Grotesk', 'AkzidenzGroteskBQ-BoldExt', 'akzidenzgroteskboldext', 'akzidenzgroteskboldextention', 'Akzidenz-Grotesk BQ Extended', 'Courier New', 'IBM Plex Mono', monospace";
+const C = {
+  bg: '#000000', border: '#1a1a1a', orange: '#FF6600',
+  green: '#00FF41', red: '#FF3333', amber: '#FFAA00',
+  muted: '#444455', white: '#CCCCCC',
+} as const;
+
+const congColor = (v: number) => v < 40 ? C.green : v <= 70 ? C.amber : C.red;
+
+const heatColor = (v: number) => {
+  if (v <= 30) return '#003300';
+  if (v <= 50) return '#664400';
+  if (v <= 70) return '#884400';
+  if (v <= 85) return '#882200';
+  return '#FF2222';
+};
+
+const trendSymbol = (v: number) => {
+  if (v > 80) return { sym: '↑↑↑', col: C.red };
+  if (v > 60) return { sym: '↑', col: C.amber };
+  if (v >= 40) return { sym: '→', col: C.muted };
+  if (v >= 20) return { sym: '↓', col: C.green };
+  return { sym: '↓↓', col: '#44FF88' };
+};
+
+const BloombergTerminalHero = () => {
+  const { trafficData, metrics, isLoading, userReportsCount, hourlyTrend } = useTrafficData();
+
+  const hasTrafficData = typeof trafficData?.sentimentScore === 'number';
+  const sentimentScore = trafficData?.sentimentScore;
+  const moodScore = hasTrafficData ? Math.max(0, 100 - sentimentScore) : undefined;
+  const rainRisk = metrics?.weather?.impactLevel === 'severe' ? 85
+    : metrics?.weather?.impactLevel === 'moderate' ? 55
+    : metrics?.weather?.impactLevel === 'low' ? 25 : undefined;
+
+  const hotspots = useMemo(() =>
+    (trafficData?.hotspots || []).slice().sort((a, b) => b.congestionLevel - a.congestionLevel).slice(0, 8),
+    [trafficData?.hotspots],
+  );
+
+  const alerts = useMemo(() => [
+    ...(metrics?.incidents || []).map(i => ({ loc: i.location, desc: i.description })),
+    ...(metrics?.roadWorks || []).map(r => ({ loc: r.location, desc: r.description })),
+  ], [metrics]);
+
+  // Clock
+  const [time, setTime] = useState('');
+  useEffect(() => {
+    const tick = () => setTime(
+      new Date().toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' IST',
+    );
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const currentHour = new Date().getHours();
+  const isPeak = (currentHour >= 8 && currentHour < 10) || (currentHour >= 17 && currentHour < 20);
+
+  // Table rows: only measured hotspot numbers are shown.
+  const tableRows = useMemo(() => {
+    if (hotspots.length > 0) return hotspots.map((h) => {
+      const now = h.congestionLevel;
+      return { name: h.name, now, h1: undefined, h3: undefined, real: true };
+    });
+    return BLR_JUNCTIONS.map(name => ({ name, now: 0, h1: 0, h3: 0, real: false }));
+  }, [hotspots]);
+
+  // Ticker items
+  const tickerItems = useMemo(() => {
+    const items = hotspots.length > 0
+      ? hotspots.map(h => ({ name: h.name, pct: h.congestionLevel }))
+      : BLR_JUNCTIONS.map(n => ({ name: n, pct: 0 }));
+    // Duplicate exactly once for seamless scroll
+    return [...items, ...items];
+  }, [hotspots]);
+
+  // Corridor strip data
+  // Corridor strip data
+  const corridorStrip = useMemo(() => {
+    const list: { name: string; congestionLevel: number; real: boolean }[] = [];
+    if (hotspots.length > 0) {
+      hotspots.forEach(h => {
+        list.push({ name: h.name, congestionLevel: h.congestionLevel, real: true });
+      });
+    }
+    for (const name of BLR_JUNCTIONS) {
+      if (list.length >= 12) break;
+      if (!list.some(item => item.name === name)) {
+        list.push({ name, congestionLevel: 0, real: false });
+      }
+    }
+    return list;
+  }, [hotspots]);
+
+  const kpis = [
+    { label: 'CITY CONGESTION', value: sentimentScore, unit: '%', forceColor: hasTrafficData ? congColor(sentimentScore) : C.muted },
+    { label: 'MOOD', value: moodScore, unit: '/100', forceColor: hasTrafficData ? '#FFCC00' : C.muted },
+    { label: 'RAIN RISK', value: rainRisk, unit: '%', forceColor: typeof rainRisk === 'number' ? (rainRisk > 60 ? C.red : rainRisk >= 40 ? C.amber : C.green) : C.muted },
+    { label: 'REPORTS', value: userReportsCount ?? 0, unit: '', forceColor: C.white },
+  ];
+
+  // ── Inline styles (no CSS classes except ticker animation) ──
+  const S = {
+    root: {
+      height: '380px', width: '100%', backgroundColor: C.bg,
+      fontFamily: FONT, color: C.white, overflowX: 'hidden',
+      borderBottom: `1px solid ${C.border}`,
+      display: 'flex', flexDirection: 'column' as const,
+      paddingLeft: '1rem', boxSizing: 'border-box' as const,
+    },
+    header: {
+      height: '28px', minHeight: '28px', display: 'flex',
+      alignItems: 'center', justifyContent: 'space-between',
+      padding: '0 10px', borderBottom: `1px solid ${C.border}`,
+      fontSize: '10px',
+    },
+    ticker: {
+      height: '24px', minHeight: '24px', overflow: 'hidden',
+      borderBottom: `1px solid ${C.border}`, background: '#000',
+      display: 'flex', alignItems: 'center', paddingLeft: '16px',
+    },
+    main: {
+      height: '240px', minHeight: '240px', display: 'grid',
+      gridTemplateColumns: '200px 1.2fr 1.5fr',
+    },
+    strip: {
+      height: '40px', minHeight: '40px',
+      borderTop: `1px solid ${C.border}`,
+    },
+    bottom: {
+      height: '48px', minHeight: '48px', display: 'grid',
+      gridTemplateColumns: '1fr 1fr',
+      borderTop: `1px solid ${C.border}`,
+    },
+  };
+
+  return (
+    <section
+      className="hidden md:flex flex-col overflow-hidden -mx-4 md:-mx-8 xl:-mx-12 w-[calc(100%+2rem)] md:w-[calc(100%+4rem)] xl:w-[calc(100%+6rem)] -mt-6 md:-mt-8"
+      style={S.root}
+    >
+      <style>{`
+        @keyframes _tk { from { transform: translateX(0) } to { transform: translateX(-50%) } }
+        ._ticker { display:inline-block; animation: _tk 30s linear infinite; white-space:nowrap }
+        .strip-scroll { overflow-x: auto; scrollbar-width: none; }
+        .strip-scroll::-webkit-scrollbar { display: none; }
+        .corridors-scroll { overflow-y: auto; scrollbar-width: none; }
+        .corridors-scroll::-webkit-scrollbar { display: none; }
+        .name-scroll { overflow-x: auto; scrollbar-width: none; }
+        .name-scroll::-webkit-scrollbar { display: none; }
+        .macro-chart-override .bg-card { background: transparent !important; border: none !important; border-radius: 0 !important; padding: 0 !important; }
+        .macro-chart-override h3 { display: none !important; }
+        .macro-chart-override .h-\\[280px\\] { height: 100% !important; min-height: 200px !important; }
+        .macro-chart-override .mt-6 { display: none !important; }
+      `}</style>
+
+      {/* ─── ROW 1: HEADER 28px ─── */}
+      <div style={S.header}>
+        <span style={{ color: C.orange, fontWeight: 700, letterSpacing: '0.08em' }}>BINDAAS BLR TRMNL</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: C.white }}>
+          <span style={{ fontVariantNumeric: 'tabular-nums' }}>{time}</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <span style={{ display: 'inline-block', width: 6, height: 6, background: isLoading ? C.amber : C.green }} />
+            <span style={{ color: isLoading ? C.amber : C.green, fontSize: '9px' }}>
+              {isLoading ? 'DATA STALE' : 'SYS NOM'}
+            </span>
+          </span>
+        </div>
+      </div>
+
+      {/* ─── ROW 2: TICKER 24px ─── */}
+      <div style={S.ticker}>
+        <div className="_ticker" style={{ fontSize: '10px', fontWeight: 700 }}>
+          {tickerItems.map((t, i) => (
+            <span key={i}>
+              <span style={{ color: C.white }}>{t.name}</span>
+              <span style={{ color: C.muted, margin: '0 4px' }}>▪</span>
+              <span style={{ color: congColor(t.pct) }}>{t.pct || '--'}%</span>
+              <span style={{ color: C.muted, margin: '0 6px' }}>▪</span>
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* ─── ROW 3: MAIN GRID 240px ─── */}
+      <div style={S.main}>
+
+        {/* CELL A ── KPI STACK (200px) */}
+        <div style={{ borderRight: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', minWidth: '200px', flexShrink: 0, overflow: 'hidden' }}>
+          {kpis.map((kpi, i) => (
+            <div key={i} style={{
+              flex: '1 1 25%', position: 'relative', overflow: 'hidden', padding: '6px 8px', paddingLeft: '12px',
+              borderBottom: i < 3 ? `1px solid ${C.border}` : 'none',
+            }}>
+              <div style={{ fontSize: '9px', color: C.orange, fontWeight: 700, textTransform: 'uppercase', lineHeight: 1, display: 'block', whiteSpace: 'nowrap' }}>{kpi.label}</div>
+              <div style={{
+                position: 'absolute', bottom: '-4px', left: '12px',
+                fontSize: '48px', fontWeight: 700, lineHeight: 1,
+                color: kpi.forceColor, display: 'flex', alignItems: 'baseline',
+              }}>
+                {typeof kpi.value === 'number' ? kpi.value : '--'}
+                <span style={{ fontSize: '16px', color: C.muted, marginLeft: '4px', transform: 'translateY(-6px)' }}>
+                  {typeof kpi.value === 'number' ? kpi.unit : ''}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* CELL B ── LIVE CORRIDORS (1.2fr) */}
+        <div style={{ borderRight: `1px solid ${C.border}`, padding: '6px 8px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <div style={{ fontSize: '8px', color: C.orange, fontWeight: 700, marginBottom: '4px' }}>LIVE CORRIDORS</div>
+          {/* Header */}
+          <div style={{ display: 'flex', fontSize: '9px', color: C.orange, fontWeight: 700, padding: '2px 0', borderBottom: `1px solid ${C.border}` }}>
+            <span style={{ flex: 3 }}>NAME</span>
+            <span style={{ flex: 1, textAlign: 'right' }}>NOW</span>
+            <span style={{ flex: 1, textAlign: 'right' }}>1H</span>
+            <span style={{ flex: 1, textAlign: 'right' }}>3H</span>
+            <span style={{ width: 40, textAlign: 'right' }}>TRND</span>
+          </div>
+          {/* Data rows */}
+          <div className="corridors-scroll" style={{ flex: 1, overflowY: 'auto' }}>
+            {tableRows.slice(0, 8).map((row, i) => {
+              const t = row.real ? trendSymbol(row.now) : { sym: '→', col: C.muted };
+              return (
+                <div key={i} style={{
+                  display: 'flex', height: '26px', alignItems: 'center',
+                  borderBottom: i < 7 ? `1px solid ${C.border}` : 'none',
+                }}>
+                  <span className="name-scroll" style={{ flex: 3, fontSize: '13px', color: C.white, fontWeight: 700, overflowX: 'auto', whiteSpace: 'nowrap' }}>
+                    {row.name}
+                  </span>
+                  <span style={{ flex: 1, textAlign: 'right', fontSize: '13px', fontWeight: 700, color: row.real ? congColor(row.now) : C.muted }}>
+                    {row.real ? `${row.now}%` : '--'}
+                  </span>
+                  <span style={{ flex: 1, textAlign: 'right', fontSize: '13px', fontWeight: 700, color: row.real && typeof row.h1 === 'number' ? congColor(row.h1) : C.muted }}>
+                    {row.real && typeof row.h1 === 'number' ? `${row.h1}%` : '--'}
+                  </span>
+                  <span style={{ flex: 1, textAlign: 'right', fontSize: '13px', fontWeight: 700, color: row.real && typeof row.h3 === 'number' ? congColor(row.h3) : C.muted }}>
+                    {row.real && typeof row.h3 === 'number' ? `${row.h3}%` : '--'}
+                  </span>
+                  <span style={{ width: 40, textAlign: 'right', fontSize: '11px', color: t.col }}>
+                    {t.sym}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* CELL C ── MACRO TREND (1.5fr) */}
+        <div className="macro-chart-override" style={{ padding: '6px 8px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <div style={{ width: '100%', height: '100%', minHeight: '200px', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ fontSize: '9px', color: '#FF6600', padding: '4px 8px' }}>
+              MACRO TREND (24H)
+            </div>
+            <div style={{ flex: 1, minHeight: 0 }}>
+              <TrafficTrendChart
+                data={hourlyTrend.length > 0 ? hourlyTrend : []}
+                title=""
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ─── ROW 4: CORRIDOR STRIP 40px ─── */}
+      <div style={S.strip}>
+        <div className="strip-scroll" style={{ width: '100%', height: '100%', display: 'flex' }}>
+          {corridorStrip.map((c, i) => (
+            <div key={i} style={{
+              flexShrink: 0, width: '120px', borderRight: `1px solid ${C.border}`,
+              display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', paddingTop: '4px', paddingLeft: '8px', paddingRight: '8px',
+            }}>
+              <div style={{ fontSize: '8px', color: C.orange, textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: '2px' }}>
+                {c.name}
+              </div>
+              <div style={{ fontSize: '20px', fontWeight: 700, lineHeight: 1, color: c.real ? congColor(c.congestionLevel) : C.muted }}>
+                {c.real ? `${c.congestionLevel}%` : '--'}
+              </div>
+              <div style={{ display: 'flex', height: '3px', gap: '1px', marginTop: '2px' }}>
+                <div style={{ flex: 1, background: c.real ? C.green : '#111' }} />
+                <div style={{ flex: 1, background: c.real && c.congestionLevel >= 40 ? C.amber : '#111' }} />
+                <div style={{ flex: 1, background: c.real && c.congestionLevel > 70 ? C.red : '#111' }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ─── ROW 5: BOTTOM BAR 48px ─── */}
+      <div style={S.bottom}>
+        {/* Left: Incident feed */}
+        <div style={{ padding: '6px 10px', borderRight: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', justifyContent: 'center', overflow: 'hidden' }}>
+          <div style={{ fontSize: '8px', color: C.orange, fontWeight: 700, marginBottom: 2 }}>INCIDENT FEED</div>
+          {alerts.length > 0 ? (
+            <div style={{ fontSize: '9px', color: C.white, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {alerts.map(a => `${a.loc}: ${a.desc}`).join(' ▪ ')}
+            </div>
+          ) : (
+            <div style={{ fontSize: '9px', color: '#226633', display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ display: 'inline-block', width: 5, height: 5, background: '#226633' }} />
+              NO ACTIVE INCIDENTS
+            </div>
+          )}
+        </div>
+        {/* Right: Market status + weather */}
+        <div style={{ padding: '6px 10px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'flex-end', width: '100%', boxSizing: 'border-box' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '10px', fontWeight: 700 }}>
+            <span style={{ display: 'inline-block', width: 6, height: 6, background: !hasTrafficData ? C.muted : isPeak ? C.red : C.green }} />
+            <span style={{ color: !hasTrafficData ? C.muted : isPeak ? C.red : C.green }}>
+              {hasTrafficData ? (isPeak ? 'PEAK TRAFFIC' : 'CITY MOVING') : 'NO TRAFFIC DATA'}
+            </span>
+          </div>
+          <div style={{ fontSize: '9px', color: C.muted, marginTop: 2, textAlign: 'right' }}>
+            {metrics?.weather
+              ? `${(metrics.weather.condition || 'UNKNOWN').toUpperCase()} ${metrics.weather.temperature}°C`
+              : 'WEATHER --'}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
 const getCorridorBadge = (nowMin: number, baseMin: number) => {
   const delay = Number(nowMin) - Number(baseMin);
-
-  if (delay <= 5) {
-    return { delay, label: 'CLEAR', dot: 'good' as const, chip: 'border-success/30 bg-success/10 text-success', bar: 'bg-success' };
-  }
-
-  if (delay <= 10) {
-    return { delay, label: 'MODERATE', dot: 'moderate' as const, chip: 'border-warning/30 bg-warning/10 text-warning', bar: 'bg-warning' };
-  }
-
-  if (delay <= 20) {
-    return { delay, label: 'HEAVY', dot: 'moderate' as const, chip: 'border-primary/30 bg-primary/10 text-primary', bar: 'bg-primary' };
-  }
-
+  if (delay <= 5) return { delay, label: 'CLEAR', dot: 'good' as const, chip: 'border-success/30 bg-success/10 text-success', bar: 'bg-success' };
+  if (delay <= 10) return { delay, label: 'MODERATE', dot: 'moderate' as const, chip: 'border-warning/30 bg-warning/10 text-warning', bar: 'bg-warning' };
+  if (delay <= 20) return { delay, label: 'HEAVY', dot: 'moderate' as const, chip: 'border-primary/30 bg-primary/10 text-primary', bar: 'bg-primary' };
   return { delay, label: 'SEVERE', dot: 'critical' as const, chip: 'border-danger/30 bg-danger/10 text-danger', bar: 'bg-danger' };
 };
 
@@ -100,85 +424,16 @@ const DashboardPage = () => {
 
   const sentiment = trafficData?.sentimentScore ?? 0;
 
+  const TF = "'Courier New', 'IBM Plex Mono', monospace";
+  const panelStyle = { background: '#0d0d0d', border: '1px solid #1a1a1a', padding: '10px 12px', fontFamily: TF } as const;
+  const labelStyle = { fontSize: '9px', fontWeight: 700, color: '#FF6600', textTransform: 'uppercase' as const, letterSpacing: '0.05em', fontFamily: TF } as const;
+  const valueStyle = { fontSize: '18px', fontWeight: 700, color: '#CCCCCC', fontFamily: TF, lineHeight: 1.2 } as const;
+  const headingStyle = { fontSize: '11px', fontWeight: 700, color: '#FF6600', textTransform: 'uppercase' as const, letterSpacing: '0.08em', fontFamily: TF, fontStyle: 'normal' as const } as const;
+
   return (
     <ErrorBoundary>
-      {/* Hero OUTSIDE the constrained wrapper — truly full bleed */}
-      <section className="w-full overflow-hidden">
-        {/* MOBILE HERO — compact, not full screen */}
-        <div className="relative overflow-hidden md:hidden" style={{ minHeight: '480px', maxHeight: '560px' }}>
-          <img
-            src={heroImage}
-            alt="Bengaluru aerial"
-            className="absolute inset-0 w-full h-full object-cover object-[center_30%]"
-          />
-          {/* Gradient — only bottom 50% */}
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent from-40% via-black/50 to-black/90" />
-
-          {/* Content pinned to bottom */}
-          <div className="absolute bottom-0 left-0 right-0 z-10 px-5 pb-5">
-            <h1 className="font-serif italic font-bold text-4xl text-white leading-tight tracking-tight mb-1">
-              Bengaluru,<br />Live.
-            </h1>
-            <p className="font-sans text-sm text-white/60 font-light mb-3">
-              Traffic, weather, and livability, all in one place.
-            </p>
-            {/* Compact congestion card */}
-            <div className="bg-black/70 backdrop-blur-xl border border-white/10 rounded-xl px-4 py-3">
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="font-display text-[10px] font-black tracking-[0.2em] uppercase text-orange-400">
-                  Live City Traffic
-                </span>
-                <span className={`badge border-success/30 bg-success/10 text-success text-[10px] px-2 py-0.5 rounded-full font-black tracking-widest ${getCongestionContext(sentiment).classes}`}>
-                  {getCongestionContext(sentiment).label}
-                </span>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="font-display font-black text-3xl text-white [font-variant-numeric:normal]">
-                  {sentiment}%
-                </span>
-                <div className="flex-1 min-w-0">
-                  <div className="h-1 w-full overflow-hidden rounded-full bg-white/10 mb-1">
-                    <div className="h-full bg-orange-500" style={{ width: `${sentiment}%` }} />
-                  </div>
-                  <p className="font-sans text-[11px] text-white/40 font-light">
-                    Updated every 30 min
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* DESKTOP HERO — md and above only */}
-        <div className="relative hidden md:block overflow-hidden min-h-[580px]">
-          <img
-            src={heroImage}
-            alt="Vidhana Soudha"
-            width="1920"
-            height="1080"
-            className="absolute inset-0 h-full w-full object-cover object-[center_20%] scale-100"
-          />
-          <div className="absolute inset-0 bg-black/40" />
-          {/* Positioned with nav padding directly on the container */}
-          <div className="absolute inset-0 z-10 flex items-end pb-8 px-4 md:px-8 xl:px-12">
-            <div className="w-full max-w-[1800px] mx-auto flex items-end justify-between gap-8">
-              {/* Heading — left side */}
-              <div className="max-w-lg flex-shrink-0">
-                <h1 className="font-serif italic font-bold text-6xl md:text-7xl lg:text-8xl text-white leading-none tracking-tight">
-                  Bengaluru, Live.
-                </h1>
-                <p className="font-sans text-base text-white/60 font-light tracking-wide mt-4">
-                  Traffic, weather, and livability, all in one place.
-                </p>
-              </div>
-              {/* Congestion card — right side, never overflows */}
-              <div className="flex-shrink-0 w-[300px]">
-                <TrafficSentimentGauge value={sentiment} />
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* Bloomberg Terminal Hero */}
+      <BloombergTerminalHero />
 
       {/* Everything else INSIDE constrained wrapper */}
       <div className="flex flex-col gap-6 py-6">
