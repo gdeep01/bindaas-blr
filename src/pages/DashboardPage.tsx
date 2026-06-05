@@ -96,6 +96,13 @@ const HeroMacroTrendChart = ({ data }: { data: Array<{ time: string; congestion?
   );
 };
 
+const MetricValue = ({ value, unit }: { value: number | undefined; unit: string }) => (
+  <>
+    {typeof value === 'number' ? value : '--'}
+    {typeof value === 'number' ? <span style={{ color: C.muted, fontSize: '0.5em', marginLeft: 3 }}>{unit}</span> : null}
+  </>
+);
+
 const BloombergTerminalHero = () => {
   const { trafficData, metrics, isLoading, userReportsCount, hourlyTrend } = useTrafficData();
 
@@ -180,7 +187,7 @@ const BloombergTerminalHero = () => {
       height: '380px', width: '100%', backgroundColor: C.bg,
       fontFamily: FONT, color: C.white, overflowX: 'hidden',
       borderBottom: `1px solid ${C.border}`,
-      display: 'flex', flexDirection: 'column' as const,
+      flexDirection: 'column' as const,
       paddingLeft: '1rem', boxSizing: 'border-box' as const,
     },
     header: {
@@ -210,7 +217,88 @@ const BloombergTerminalHero = () => {
   };
 
   return (
-    <section
+    <>
+      <section
+        className="md:hidden overflow-hidden -mx-4 -mt-6 border-b border-[#1a1a1a] bg-black"
+        style={{ fontFamily: FONT, color: C.white }}
+      >
+        <style>{`
+          @keyframes _tk_mobile { from { transform: translateX(0) } to { transform: translateX(-50%) } }
+          ._ticker_mobile { display:inline-block; animation: _tk_mobile 32s linear infinite; white-space:nowrap }
+        `}</style>
+
+        <div style={{ minHeight: 34, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '7px 12px', borderBottom: `1px solid ${C.border}` }}>
+          <span style={{ color: C.orange, fontSize: 9, fontWeight: 700, letterSpacing: '0.08em' }}>BINDAAS BLR TRMNL</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: C.white, fontSize: 8 }}>
+            <span>{time}</span>
+            <span style={{ display: 'inline-block', width: 5, height: 5, background: isLoading ? C.amber : C.green }} />
+          </div>
+        </div>
+
+        <div style={{ height: 24, overflow: 'hidden', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center' }}>
+          <div className="_ticker_mobile" style={{ fontSize: 9, fontWeight: 700 }}>
+            {tickerItems.map((t, i) => (
+              <span key={i}>
+                <span style={{ color: C.white }}>{t.name}</span>
+                <span style={{ color: C.muted, margin: '0 4px' }}>▪</span>
+                <span style={{ color: congColor(t.pct) }}>{t.pct || '--'}%</span>
+                <span style={{ color: C.muted, margin: '0 6px' }}>▪</span>
+              </span>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', borderBottom: `1px solid ${C.border}` }}>
+          {kpis.map((kpi, i) => (
+            <div key={kpi.label} style={{ minHeight: 72, padding: '8px 12px', borderRight: i % 2 === 0 ? `1px solid ${C.border}` : 'none', borderBottom: i < 2 ? `1px solid ${C.border}` : 'none' }}>
+              <div style={{ color: C.orange, fontSize: 8, fontWeight: 700, lineHeight: 1, marginBottom: 5 }}>{kpi.label}</div>
+              <div style={{ color: kpi.forceColor, fontSize: 34, fontWeight: 700, lineHeight: 0.95 }}>
+                <MetricValue value={kpi.value} unit={kpi.unit} />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ padding: '9px 12px 6px', borderBottom: `1px solid ${C.border}` }}>
+          <div style={{ color: C.orange, fontSize: 8, fontWeight: 700, marginBottom: 6 }}>LIVE CORRIDORS</div>
+          <div style={{ display: 'grid', gap: 5 }}>
+            {tableRows.slice(0, 4).map((row) => (
+              <div key={row.name} style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto auto auto', alignItems: 'center', gap: 8, fontSize: 10, fontWeight: 700 }}>
+                <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: C.white }}>{row.name}</span>
+                <span style={{ color: row.real ? congColor(row.now) : C.muted }}>{row.real ? `${row.now}%` : '--'}</span>
+                <span style={{ color: row.real && typeof row.h1 === 'number' ? congColor(row.h1) : C.muted }}>{row.real && typeof row.h1 === 'number' ? `${row.h1}%` : '--'}</span>
+                <span style={{ color: row.real && typeof row.h3 === 'number' ? congColor(row.h3) : C.muted }}>{row.real && typeof row.h3 === 'number' ? `${row.h3}%` : '--'}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ padding: '8px 12px', height: 120, borderBottom: `1px solid ${C.border}` }}>
+          <div style={{ color: C.orange, fontSize: 8, fontWeight: 700, marginBottom: 4 }}>MACRO TREND (24H)</div>
+          <div style={{ height: 92 }}>
+            <HeroMacroTrendChart data={hourlyTrend} />
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', alignItems: 'center', gap: 8, padding: '8px 12px' }}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ color: C.orange, fontSize: 8, fontWeight: 700, marginBottom: 2 }}>INCIDENT FEED</div>
+            <div style={{ color: C.white, fontSize: 9, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {alerts.length > 0 ? alerts.slice(0, 2).map(a => `${a.loc}: ${a.desc}`).join(' ▪ ') : 'NO ACTIVE INCIDENTS'}
+            </div>
+          </div>
+          <div style={{ textAlign: 'right', minWidth: 92 }}>
+            <div style={{ color: !hasTrafficData ? C.muted : isPeak ? C.red : C.green, fontSize: 9, fontWeight: 700 }}>
+              {hasTrafficData ? (isPeak ? 'PEAK TRAFFIC' : 'CITY MOVING') : 'NO DATA'}
+            </div>
+            <div style={{ color: C.muted, fontSize: 8, fontWeight: 700, marginTop: 2 }}>
+              {metrics?.weather ? `${(metrics.weather.condition || 'UNKNOWN').toUpperCase()} ${metrics.weather.condition === 'unknown' ? '--' : metrics.weather.temperature}°C` : 'WEATHER --'}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section
       className="hidden md:flex flex-col overflow-hidden -mx-4 md:-mx-8 xl:-mx-12 w-[calc(100%+2rem)] md:w-[calc(100%+4rem)] xl:w-[calc(100%+6rem)] -mt-6 md:-mt-8"
       style={S.root}
     >
@@ -391,7 +479,8 @@ const BloombergTerminalHero = () => {
           </div>
         </div>
       </div>
-    </section>
+      </section>
+    </>
   );
 };
 
