@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Tables } from '@/integrations/supabase/types';
 import type { TrafficData, HourlyDataPoint, TrafficMetrics, Incident, RoadWork, StationTrafficData } from '@/lib/trafficApi';
 import type { LandslideRiskZone, Earthquake, NASAEvent } from '@/lib/landslideApi';
-import { buildHourlyTrend, buildTrafficMetrics } from '@/lib/trafficHistory';
+import { buildHourlyTrend, buildTrafficMetrics, isRoadTrafficRow } from '@/lib/trafficHistory';
 
 type TrafficHistoryRow = Tables<'traffic_history'>;
 type GarbageReportRow = Tables<'garbage_reports'>;
@@ -407,6 +407,14 @@ export const TrafficDataProvider = ({ children }: { children: ReactNode }) => {
         .eq('id', 1)
         .maybeSingle(),
     ]);
+
+    const coreQueryError =
+      latestTrafficResponse.error?.message ??
+      trafficHistoryResponse.error?.message ??
+      heartbeatResponse.error?.message;
+    if (coreQueryError) {
+      throw new Error(coreQueryError);
+    }
 
     // Non-critical queries — use allSettled so failures don't crash the refresh
     const [aiResult, garbageResult, disasterResult] = await Promise.allSettled([

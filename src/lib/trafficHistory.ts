@@ -15,7 +15,7 @@ const isTransitLocation = (name: string) => {
   return TRANSIT_LOCATION_NAMES.has(normalized) || normalized.includes('railway station') || normalized.includes('international airport');
 };
 
-const isRoadTrafficRow = (row: TrafficHistoryRow) =>
+export const isRoadTrafficRow = (row: TrafficHistoryRow) =>
   row.data_source !== 'tomtom-incidents' &&
   row.data_source !== 'tomtom-roadworks' &&
   !isTransitLocation(row.location_name);
