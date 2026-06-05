@@ -80,6 +80,8 @@ const STALE_THRESHOLD_MS = 40 * 60 * 1000;   // 40 min
 const ETA_CONGESTION_FACTOR = 0.6;
 const ETA_BASE_MINUTES = 5;
 const INSIGHTS_COOLDOWN_MS = 15 * 60 * 1000; // 15 minutes
+const ONE_HOUR_MS = 60 * 60 * 1000;
+const HISTORY_LOOKUP_TOLERANCE_MS = 45 * 60 * 1000;
 const AIRPORT_STATION_NAMES = [
   'Kempegowda International Airport',
   'KSR Bengaluru City Railway Station',
@@ -219,6 +221,48 @@ const toFiniteNumber = (value: number | string | undefined): number | null => {
   }
 
   return null;
+};
+
+const getWeatherImpactLevel = (condition?: string | null): TrafficMetrics['weather']['impactLevel'] => {
+  const normalized = condition?.toLowerCase() ?? '';
+  if (!normalized || normalized === 'unknown' || normalized === 'clear') return 'none';
+  if (normalized.includes('thunder') || normalized.includes('storm') || normalized.includes('heavy')) return 'severe';
+  if (normalized.includes('rain') || normalized.includes('drizzle')) return 'moderate';
+  if (normalized.includes('mist') || normalized.includes('fog') || normalized.includes('haze') || normalized.includes('cloud')) return 'low';
+  return 'none';
+};
+
+const buildLocationHistoryLookup = (rows: TrafficHistoryRow[], latestMs: number) => {
+  const trafficRows = rows
+    .filter((row) => row.data_source !== 'tomtom-incidents' && row.data_source !== 'tomtom-roadworks')
+    .map((row) => ({ row, ms: new Date(row.recorded_at).getTime() }))
+    .filter((entry) => Number.isFinite(entry.ms))
+    .sort((left, right) => left.ms - right.ms);
+
+  const byLocation = new Map<string, Array<{ row: TrafficHistoryRow; ms: number }>>();
+  for (const entry of trafficRows) {
+    const list = byLocation.get(entry.row.location_name) ?? [];
+    list.push(entry);
+    byLocation.set(entry.row.location_name, list);
+  }
+
+  const nearest = (locationName: string, hoursAgo: number): number | null => {
+    const target = latestMs - hoursAgo * ONE_HOUR_MS;
+    const rowsForLocation = byLocation.get(locationName) ?? [];
+    let best: { value: number; distance: number } | null = null;
+
+    for (const entry of rowsForLocation) {
+      const distance = Math.abs(entry.ms - target);
+      if (distance > HISTORY_LOOKUP_TOLERANCE_MS) continue;
+      if (!best || distance < best.distance) {
+        best = { value: Number(entry.row.congestion_level), distance };
+      }
+    }
+
+    return best?.value ?? null;
+  };
+
+  return { nearest };
 };
 
 const getCoordinatePair = (item: unknown): { lat: number | null; lng: number | null } => {
@@ -451,6 +495,16 @@ export const TrafficDataProvider = ({ children }: { children: ReactNode }) => {
       }
       return new Date(row.recorded_at) > new Date(latest.recorded_at) ? row : latest;
     }, null);
+    const latestTrafficDataRow = latestRowsByLocation.reduce<TrafficHistoryRow | null>((latest, row) => {
+      if (!latest) {
+        return row;
+      }
+      return new Date(row.recorded_at) > new Date(latest.recorded_at) ? row : latest;
+    }, null);
+    const latestTrafficDataMs = latestTrafficDataRow?.recorded_at
+      ? new Date(latestTrafficDataRow.recorded_at).getTime()
+      : Date.now();
+    const locationHistory = buildLocationHistoryLookup(historyRows, latestTrafficDataMs);
 
     const stationData: Record<string, StationTrafficData | null> = {};
     AIRPORT_STATION_NAMES.forEach(name => {
@@ -484,6 +538,8 @@ export const TrafficDataProvider = ({ children }: { children: ReactNode }) => {
       lat: Number(row.latitude),
       lng: Number(row.longitude),
       congestionLevel: Number(row.congestion_level),
+      congestion1h: locationHistory.nearest(row.location_name, 1),
+      congestion3h: locationHistory.nearest(row.location_name, 3),
       currentSpeed: Number(row.current_speed ?? 0),
       freeFlowSpeed: Number(row.free_flow_speed ?? 0),
       trend: 'stable' as const,
@@ -504,27 +560,29 @@ export const TrafficDataProvider = ({ children }: { children: ReactNode }) => {
         ? {
             hotspots,
             sentimentScore: avgCongestion,
-            timestamp: latestRecordedRow?.recorded_at ?? new Date().toISOString(),
-            isPeakHour: latestRecordedRow?.is_peak_hour ?? false,
-            isWeekend: latestRecordedRow?.is_weekend ?? false,
+            timestamp: latestTrafficDataRow?.recorded_at ?? latestRecordedRow?.recorded_at ?? new Date().toISOString(),
+            isPeakHour: latestTrafficDataRow?.is_peak_hour ?? false,
+            isWeekend: latestTrafficDataRow?.is_weekend ?? false,
             currentHour:
-              typeof latestRecordedRow?.departure_hour === 'number'
-                ? latestRecordedRow.departure_hour
+              typeof latestTrafficDataRow?.departure_hour === 'number'
+                ? latestTrafficDataRow.departure_hour
                 : new Date().getHours(),
             dataSource: 'Supabase Realtime',
             metrics: trafficDataRef.current?.metrics,
           }
         : trafficDataRef.current;
-    const trafficWeather = latestRecordedRow?.weather_condition
+    const weatherCondition = latestTrafficDataRow?.weather_condition ?? heartbeat?.weather_condition ?? null;
+    const weatherTemp = latestTrafficDataRow?.weather_temp ?? heartbeat?.weather_temp ?? null;
+    const trafficWeather = weatherCondition
       ? {
-          condition: latestRecordedRow.weather_condition,
-          description: latestRecordedRow.weather_condition,
-          temperature: latestRecordedRow.weather_temp ?? 0,
+          condition: weatherCondition,
+          description: weatherCondition,
+          temperature: weatherTemp ?? 0,
           humidity: 0,
           visibility: 0,
           windSpeed: 0,
           icon: '01d',
-          impactLevel: 'none' as const,
+          impactLevel: getWeatherImpactLevel(weatherCondition),
         }
       : undefined;
     const nextMetrics = buildTrafficMetrics(snapshot, historyRows, trafficDataRef.current?.metrics ?? null);

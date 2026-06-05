@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Route } from 'lucide-react';
+import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { TrafficTrendChart } from '@/components/TrafficTrendChart';
 import { DataCard } from '@/components/ui/DataCard';
@@ -44,6 +45,57 @@ const trendSymbol = (v: number) => {
   return { sym: '↓↓', col: '#44FF88' };
 };
 
+const HeroMacroTrendChart = ({ data }: { data: Array<{ time: string; congestion?: number; predicted?: number }> }) => {
+  const chartData = useMemo(
+    () =>
+      data
+        .map((point) => ({
+          label: point.time,
+          congestion: typeof point.congestion === 'number' ? point.congestion : undefined,
+          predicted: typeof point.predicted === 'number' ? point.predicted : undefined,
+        }))
+        .filter((point) => typeof point.congestion === 'number' || typeof point.predicted === 'number'),
+    [data],
+  );
+
+  if (!chartData.length) {
+    return (
+      <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.muted, fontSize: '10px', fontWeight: 700 }}>
+        WAITING FOR TRAFFIC HISTORY
+      </div>
+    );
+  }
+
+  return (
+    <ResponsiveContainer width="100%" height="100%">
+      <LineChart data={chartData} margin={{ top: 8, right: 10, left: -28, bottom: 0 }}>
+        <XAxis
+          dataKey="label"
+          tick={{ fill: C.muted, fontSize: 8, fontWeight: 700 }}
+          tickLine={false}
+          axisLine={false}
+          interval="preserveStartEnd"
+          minTickGap={18}
+        />
+        <YAxis
+          domain={[0, 100]}
+          ticks={[0, 50, 100]}
+          tick={{ fill: C.muted, fontSize: 8, fontWeight: 700 }}
+          tickLine={false}
+          axisLine={false}
+        />
+        <Tooltip
+          formatter={(value) => [`${Math.round(Number(value))}%`, 'Congestion']}
+          contentStyle={{ background: '#050505', border: `1px solid ${C.border}`, borderRadius: 0, color: C.white, fontSize: 10 }}
+          labelStyle={{ color: C.orange }}
+        />
+        <Line type="monotone" dataKey="congestion" stroke={C.orange} strokeWidth={2} dot={false} connectNulls={false} isAnimationActive={false} />
+        <Line type="monotone" dataKey="predicted" stroke={C.green} strokeWidth={2} strokeDasharray="4 4" dot={false} connectNulls={false} isAnimationActive={false} />
+      </LineChart>
+    </ResponsiveContainer>
+  );
+};
+
 const BloombergTerminalHero = () => {
   const { trafficData, metrics, isLoading, userReportsCount, hourlyTrend } = useTrafficData();
 
@@ -52,7 +104,8 @@ const BloombergTerminalHero = () => {
   const moodScore = hasTrafficData ? Math.max(0, 100 - sentimentScore) : undefined;
   const rainRisk = metrics?.weather?.impactLevel === 'severe' ? 85
     : metrics?.weather?.impactLevel === 'moderate' ? 55
-    : metrics?.weather?.impactLevel === 'low' ? 25 : undefined;
+    : metrics?.weather?.impactLevel === 'low' ? 25
+    : metrics?.weather ? 0 : undefined;
 
   const hotspots = useMemo(() =>
     (trafficData?.hotspots || []).slice().sort((a, b) => b.congestionLevel - a.congestionLevel).slice(0, 8),
@@ -82,7 +135,7 @@ const BloombergTerminalHero = () => {
   const tableRows = useMemo(() => {
     if (hotspots.length > 0) return hotspots.map((h) => {
       const now = h.congestionLevel;
-      return { name: h.name, now, h1: undefined, h3: undefined, real: true };
+      return { name: h.name, now, h1: h.congestion1h, h3: h.congestion3h, real: true };
     });
     return BLR_JUNCTIONS.map(name => ({ name, now: 0, h1: 0, h3: 0, real: false }));
   }, [hotspots]);
@@ -277,10 +330,7 @@ const BloombergTerminalHero = () => {
               MACRO TREND (24H)
             </div>
             <div style={{ flex: 1, minHeight: 0 }}>
-              <TrafficTrendChart
-                data={hourlyTrend.length > 0 ? hourlyTrend : []}
-                title=""
-              />
+              <HeroMacroTrendChart data={hourlyTrend} />
             </div>
           </div>
         </div>
@@ -336,7 +386,7 @@ const BloombergTerminalHero = () => {
           </div>
           <div style={{ fontSize: '9px', color: C.muted, marginTop: 2, textAlign: 'right' }}>
             {metrics?.weather
-              ? `${(metrics.weather.condition || 'UNKNOWN').toUpperCase()} ${metrics.weather.temperature}°C`
+              ? `${(metrics.weather.condition || 'UNKNOWN').toUpperCase()} ${metrics.weather.condition === 'unknown' ? '--' : metrics.weather.temperature}°C`
               : 'WEATHER --'}
           </div>
         </div>

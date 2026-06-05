@@ -19,6 +19,33 @@
   font-display: swap;
 }
 
+@font-face {
+  font-family: 'AkzidenzGroteskBQ-BoldExt';
+  src: url('/fonts/AkzidenzGroteskBQ-BoldExt.woff2') format('woff2');
+  font-weight: 700;
+  font-stretch: expanded;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'akzidenzgroteskboldext';
+  src: url('/fonts/AkzidenzGroteskBQ-BoldExt.woff2') format('woff2');
+  font-weight: 700;
+  font-stretch: expanded;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'akzidenzgroteskboldextention';
+  src: url('/fonts/AkzidenzGroteskBQ-BoldExt.woff2') format('woff2');
+  font-weight: 700;
+  font-stretch: expanded;
+  font-style: normal;
+  font-display: swap;
+}
+
 
 @layer base {
   :root,

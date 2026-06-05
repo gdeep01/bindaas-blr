@@ -1,6 +1,8 @@
 interface HotspotData {
   name: string;
   congestionLevel: number;
+  congestion1h?: number | null;
+  congestion3h?: number | null;
   trend: 'up' | 'down' | 'stable';
   eta: string;
   etaMinutes: number;
